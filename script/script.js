@@ -1,27 +1,155 @@
-// Importações no topo (como já temos)
+// Importações de Módulos ES6 no topo do arquivo.
+// O importmap no seu HTML dirá ao navegador onde encontrar esses módulos.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'; // Importe se seu modelo usar compressão Draco
+
+/**
+ * Script principal para a Landing Page de Serviços
+ * Autor: [@mizael_m.m]
+ * Versão: 1.3 (com imports ES6 explícitos e importmap) - ESTA VERSÃO FUNCIONAVA NO PC
+ * Funcionalidades:
+ * 1. Animações de entrada de elementos ao rolar a página.
+ * 2. Efeito de parallax nas imagens da seção de herói.
+ * 3. Controle de carrossel horizontal para a seção de problemas.
+ * 4. Dica visual de "arraste para o lado" que desaparece após a interação.
+ * 5. Renderização de modelo 3D (cérebro) na seção de serviços.
+ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ... (suas funções initScrollAnimation, initParallaxEffect, etc. permanecem as mesmas) ...
+    console.log('DOM Carregado. Iniciando scripts...');
 
+    /**
+     * Função 1: Animação de entrada para elementos com a classe .animate-on-scroll
+     */
+    const initScrollAnimation = () => {
+        const animatedElements = document.querySelectorAll('.animate-on-scroll');
+        if (animatedElements.length === 0) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        animatedElements.forEach(element => observer.observe(element));
+    };
+
+    /**
+     * Função 2: Efeito de parallax nas imagens flutuantes da seção de herói.
+     */
+    const initParallaxEffect = () => {
+        const parallaxImages = document.querySelectorAll('.floating-img');
+        if (parallaxImages.length === 0) return;
+
+        const initialTransforms = new Map();
+        parallaxImages.forEach(img => {
+            const transform = getComputedStyle(img).transform;
+            initialTransforms.set(img, transform === 'none' ? '' : transform);
+        });
+
+        const handleScroll = () => {
+            const scrollY = window.pageYOffset;
+            parallaxImages.forEach(img => {
+                const speed = parseFloat(img.getAttribute('data-parallax-speed')) || 0;
+                const parallaxOffset = scrollY * speed * 0.3;
+                const baseTransform = initialTransforms.get(img);
+                img.style.transform = `${baseTransform} translateY(${parallaxOffset}px)`;
+            });
+        };
+
+        window.addEventListener('scroll', () => {
+            window.requestAnimationFrame(handleScroll);
+        }, { passive: true });
+    };
+
+    /**
+     * Função 3: Lógica do carrossel horizontal da seção de problemas.
+     */
+    const initProblemsCarousel = () => {
+        const trackWrapper = document.querySelector('.horizontal-track-wrapper');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        if (!trackWrapper || !prevBtn || !nextBtn) return;
+
+        const updateButtons = () => {
+            if (!trackWrapper.offsetParent) return;
+            const scrollEnd = trackWrapper.scrollWidth - trackWrapper.clientWidth - 1;
+            prevBtn.disabled = trackWrapper.scrollLeft <= 0;
+            nextBtn.disabled = trackWrapper.scrollLeft >= scrollEnd;
+        };
+
+        const scrollCarousel = (direction) => {
+            const card = trackWrapper.querySelector('.problem-card-horizontal');
+            if (!card) return;
+            const gap = parseInt(getComputedStyle(card.parentElement).gap) || 30;
+            const scrollAmount = (card.offsetWidth + gap) * direction;
+            trackWrapper.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        };
+
+        prevBtn.addEventListener('click', () => scrollCarousel(-1));
+        nextBtn.addEventListener('click', () => scrollCarousel(1));
+        trackWrapper.addEventListener('scroll', updateButtons, { passive: true });
+        
+        setTimeout(updateButtons, 100);
+    };
+
+    /**
+     * Função 4: Lógica da dica "Arraste para o lado".
+     */
+    const initDragHint = () => {
+        const problemsSection = document.querySelector('.problems-section');
+        const simpleHint = document.querySelector('.simple-hint-container');
+        const trackWrapper = document.querySelector('.horizontal-track-wrapper');
+
+        if (!problemsSection || !simpleHint || !trackWrapper) return;
+
+        const hintObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    simpleHint.classList.add('is-visible');
+                    hintObserver.unobserve(problemsSection);
+                }
+            });
+        }, { threshold: 0.5 });
+        hintObserver.observe(problemsSection);
+
+        const hideHint = () => {
+            simpleHint.classList.add('is-hidden');
+            trackWrapper.removeEventListener('scroll', hideHint);
+            document.getElementById('prev-btn')?.removeEventListener('click', hideHint);
+            document.getElementById('next-btn')?.removeEventListener('click', hideHint);
+        };
+        trackWrapper.addEventListener('scroll', hideHint, { once: true });
+        document.getElementById('prev-btn')?.addEventListener('click', hideHint, { once: true });
+        document.getElementById('next-btn')?.addEventListener('click', hideHint, { once: true });
+    };
+
+    /**
+     * Função 5: Inicializa e renderiza o modelo 3D do cérebro.
+     */
     const initBrainModel = () => {
-        console.log('[Mobile Test] Tentando iniciar initBrainModel...');
+        console.log('Tentando iniciar initBrainModel...');
         const container = document.getElementById('brain-canvas-container');
         if (!container) {
-            console.error('[Mobile Test] #brain-canvas-container não encontrado.');
+            console.error('#brain-canvas-container não encontrado no DOM.');
             return;
         }
+        console.log('Contêiner do canvas encontrado:', container);
 
-        if (!THREE || !GLTFLoader) {
-            console.error('[Mobile Test] ERRO CRÍTICO: Three.js ou GLTFLoader não importados.');
+        if (!THREE || !GLTFLoader) { // GLTFLoader e DRACOLoader são importados no topo
+            console.error('ERRO CRÍTICO: Three.js, GLTFLoader ou DRACOLoader não foram importados corretamente no topo do script.');
+            container.innerHTML = '<p style="color:red; font-size:12px;">Erro: Bibliotecas 3D não carregadas.</p>';
             return;
         }
+        console.log('THREE, GLTFLoader e DRACOLoader estão disponíveis.');
 
         const scene = new THREE.Scene();
-        // Para debug no mobile, adicione um fundo visível à cena
-        // scene.background = new THREE.Color(0xabcdef); // Um azul claro para ver se a cena renderiza
+        console.log('Cena criada.');
 
         const camera = new THREE.PerspectiveCamera(
             50,
@@ -29,108 +157,106 @@ document.addEventListener('DOMContentLoaded', () => {
             0.1,
             1000
         );
-        // AFASTE A CÂMERA PARA GARANTIR QUE O OBJETO NÃO ESTÁ MUITO PERTO/DENTRO DELA
-        camera.position.set(0, 0, 5); // Aumentado de 3 para 5 (ou até 10 para teste)
-        console.log('[Mobile Test] Câmera posicionada em z=5');
+        camera.position.set(0, 0, 3); 
+        console.log('Câmera criada e posicionada.');
 
-        const renderer = new THREE.WebGLRenderer({
-            antialias: false, // 1. DESABILITAR ANTIALIASING PARA TESTE NO MOBILE (menos custoso)
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
             alpha: true,
-            powerPreference: "low-power" // Manter low-power por enquanto
+            // powerPreference: "low-power" // Podemos testar com e sem depois para mobile
         });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        // 2. TENTAR REDUZIR O PIXEL RATIO NO MOBILE (menos custoso, mas menos nítido)
-        // renderer.setPixelRatio(window.devicePixelRatio > 1.5 ? 1.5 : window.devicePixelRatio);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1)); // Força no máximo 1 para teste
+        renderer.setPixelRatio(window.devicePixelRatio);
 
         container.innerHTML = '';
         container.appendChild(renderer.domElement);
+        console.log('Renderizador criado e adicionado ao contêiner.');
 
-        // 3. ILUMINAÇÃO MAIS SIMPLES E FORTE PARA TESTE
-        const ambientLight = new THREE.AmbientLight(0xffffff, 3.0); // Intensidade bem alta
+        // Iluminação
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
         scene.add(ambientLight);
-        // Comente outras luzes para o teste inicial no mobile
-        // const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
-        // directionalLight.position.set(5, 8, 6);
-        // scene.add(directionalLight);
-        console.log('[Mobile Test] Iluminação ambiente forte adicionada.');
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8); 
+        directionalLight.position.set(5, 7, 5); 
+        scene.add(directionalLight);
+        // const pointLight = new THREE.PointLight(0xffffff, 0.7, 100);
+        // pointLight.position.set(-4, -3, 4);
+        // scene.add(pointLight);
+        console.log('Luzes adicionadas à cena.');
 
         const loader = new GLTFLoader();
 
         if (DRACOLoader) {
             const dracoLoader = new DRACOLoader();
-            // 4. TENTAR FORÇAR O CAMINHO COMPLETO DA CDN PARA O DECODER DRACO
-            // Se o `three/addons/...` não resolver corretamente no mobile via importmap na Vercel.
-            dracoLoader.setDecoderPath('https://www.unpkg.com/three@0.164.1/examples/jsm/libs/draco/gltf/');
+            dracoLoader.setDecoderPath('three/addons/libs/draco/gltf/');
             loader.setDRACOLoader(dracoLoader);
-            console.log('[Mobile Test] DRACOLoader configurado com caminho explícito da CDN.');
+            console.log('DRACOLoader configurado e associado ao GLTFLoader.');
+        } else {
+            console.warn('DRACOLoader não foi importado/disponível. Modelos comprimidos com Draco podem não carregar.');
         }
 
-        let testObject; // Usaremos para o modelo ou um cubo de teste
-        const modelPath = 'assets/brain_model.glb';
+        let brainModel;
+        const modelPath = 'assets/brain_model.glb'; 
+        console.log(`Tentando carregar modelo de: ${modelPath}`);
 
-        // 5. TESTE COM UM CUBO SIMPLES PRIMEIRO
-        const useTestCube = false; // MUDE PARA 'true' PARA TESTAR O CUBO
+        loader.load(
+            modelPath,
+            (gltf) => {
+                console.log('Modelo GLTF carregado com sucesso:', gltf);
+                brainModel = gltf.scene;
+                brainModel.visible = true;
 
-        if (useTestCube) {
-            console.log('[Mobile Test] Usando CUBO DE TESTE.');
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 }); // Verde
-            testObject = new THREE.Mesh(geometry, material);
-            scene.add(testObject);
-            console.log('[Mobile Test] Cubo de teste adicionado à cena.');
-        } else {
-            console.log(`[Mobile Test] Tentando carregar modelo: ${modelPath}`);
-            loader.load(
-                modelPath,
-                (gltf) => {
-                    console.log('[Mobile Test] Modelo GLTF carregado:', gltf);
-                    testObject = gltf.scene;
-                    testObject.visible = true;
+                const box = new THREE.Box3().setFromObject(brainModel);
+                const center = box.getCenter(new THREE.Vector3());
+                brainModel.position.sub(center);
 
-                    const box = new THREE.Box3().setFromObject(testObject);
-                    const center = box.getCenter(new THREE.Vector3());
-                    testObject.position.sub(center);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
 
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-
-                    if (maxDim === 0 || !isFinite(maxDim)) {
-                        testObject.scale.set(1, 1, 1);
-                    } else {
-                        const desiredSize = 1.5; // Mantenha um tamanho razoável
-                        const scale = desiredSize / maxDim;
-                        testObject.scale.set(scale, scale, scale);
-                        console.log(`[Mobile Test] Modelo escalado por: ${scale}`);
-                    }
-                    
-                    // 6. APLICAR MATERIAL BÁSICO E OPACO NO MODELO PARA TESTE NO MOBILE
-                    testObject.traverse((child) => {
-                        if (child.isMesh) {
-                            console.log('[Mobile Test] Aplicando material de teste (MeshBasicMaterial) à mesh:', child.name);
-                            child.material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }); // Verde e wireframe para fácil visualização
+                if (maxDim === 0 || !isFinite(maxDim)) {
+                    console.warn("Dimensões do modelo são zero ou inválidas. Aplicando escala padrão de 1.");
+                    brainModel.scale.set(1, 1, 1);
+                } else {
+                    const desiredSize = 1.7; 
+                    const scale = desiredSize / maxDim;
+                    brainModel.scale.set(scale, scale, scale);
+                    console.log(`Modelo escalado por um fator de: ${scale}. Tamanho desejado: ${desiredSize}`);
+                }
+                
+                brainModel.traverse((child) => {
+                    if (child.isMesh) {
+                        if (child.material) {
+                            child.material.transparent = true;
+                            child.material.opacity = 0.85; 
+                            child.material.depthWrite = false; 
+                            
+                            if (child.material.metalness !== undefined) child.material.metalness = 0.1;
+                            if (child.material.roughness !== undefined) child.material.roughness = 0.5;
                             child.material.needsUpdate = true;
                         }
-                    });
-                    scene.add(testObject);
-                    console.log('[Mobile Test] Modelo do cérebro adicionado com material de TESTE.');
-                },
-                undefined,
-                (error) => {
-                    console.error(`[Mobile Test] Erro ao carregar ${modelPath}:`, error);
-                    if (container) container.innerHTML = `<p style="color:red; font-size:12px;">Erro ao carregar. Console (F12).</p>`;
-                }
-            );
-        }
+                    }
+                });
+
+                scene.add(brainModel);
+                console.log('Modelo do cérebro adicionado à cena e materiais ajustados.');
+            },
+            (xhr) => {
+                 // console.log(`Modelo: ${(xhr.loaded / xhr.total * 100).toFixed(0)}% carregado`);
+            },
+            (error) => {
+                console.error(`Erro DETALHADO ao carregar o modelo 3D de "${modelPath}":`, error);
+                if (container) container.innerHTML = `<p style="color:red; font-size:12px;">Erro ao carregar modelo 3D. Verifique o console (F12).</p><p style="color:red; font-size:10px;">${error.message || 'Erro desconhecido'}</p>`;
+            }
+        );
 
         const animate = () => {
             requestAnimationFrame(animate);
-            if (testObject) {
-                testObject.rotation.y += 0.005;
+            if (brainModel) {
+                brainModel.rotation.y += 0.0035; 
             }
             renderer.render(scene, camera);
         };
         animate();
+        console.log('Loop de animação iniciado.');
 
         const onWindowResize = () => {
             if (container && container.clientWidth > 0 && container.clientHeight > 0) {
@@ -142,7 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', onWindowResize);
     };
 
-    // ... (sua função initPage chamando initBrainModel)
+    /**
+     * Função de inicialização principal.
+     */
     const initPage = () => {
         initScrollAnimation();
         initParallaxEffect();
@@ -150,6 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initDragHint();
         initBrainModel();
     };
+
+    // Inicia tudo!
     initPage();
-    console.log('initPage() chamado.');
+    console.log('initPage() chamado. Todos os scripts de inicialização executados.');
 });
