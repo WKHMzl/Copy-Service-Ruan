@@ -7,6 +7,9 @@
     --color-primary-green: #1DB954;
     --color-primary-green-hover: #1ED760;
 
+    --color-primary-green: #1DB954;
+    --color-primary-green-rgb: 29, 185, 84; 
+
     --color-dark-bg: #121212;
     --color-dark-card: #1e1e1e;
     --color-dark-card-gradient-start: #212121;
@@ -215,6 +218,70 @@ body {
     transform: rotate(20deg);
 }
 
+/* ================================================================ */
+/* ESTILOS DOS DESTAQUES (SUBLINHADOS) NO HERO                      */
+/* ================================================================ */
+
+.highlight-problem,
+.highlight-consequence {
+    background-repeat: no-repeat;
+    background-position: left bottom;
+    /* Definimos o tamanho inicial como 0% para os que SERÃO animados via JS */
+    background-size: 0% 8px; 
+}
+
+.highlight-problem {
+    color: var(--color-text-light);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 8" preserveAspectRatio="none"><path d="M0 6 C 40 8, 60 2, 100 6" stroke="rgba(207,10,10,0.8)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>');
+    /* A transição só se aplica quando houver mudança no background-size */
+    transition: background-size 0.8s ease-out;
+}
+
+.highlight-consequence {
+    display: inline-block;
+    color: var(--color-primary-red);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 8" preserveAspectRatio="none"><path d="M0 6 C 40 8, 60 2, 100 6" stroke="%23CF0A0A" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>');
+    transition: background-size 1s ease-out 0.4s;
+}
+
+/* Para elementos que DEVEM SER ANIMADOS pelo JavaScript (com .animate-on-scroll) */
+.highlight-problem.animate-on-scroll.is-visible,
+.highlight-consequence.animate-on-scroll.is-visible {
+    background-size: 100% 8px;
+}
+
+/* Para elementos que DEVEM APARECER IMEDIATAMENTE no carregamento (com .visible-onload) */
+.highlight-problem.visible-onload,
+.highlight-consequence.visible-onload {
+    /* Define o estado final do sublinhado diretamente */
+    background-size: 100% 8px; 
+    
+    /* OPCIONAL: Animação de "desenho" no carregamento da página.
+       Se não quiser esta animação de desenho e quiser que o sublinhado apenas
+       APAREÇA 100% instantaneamente, remova as duas linhas de 'animation' abaixo.
+       A transição da classe base PODE já dar um efeito suave se o estado inicial for 0.
+       Para garantir o "desenho", uma animação explícita é melhor. */
+    animation-name: draw-underline-onload;
+    animation-duration: 0.8s; /* Ajuste a duração conforme o .highlight-problem */
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards; /* Mantém o estado final da animação */
+}
+
+/* A animação para .highlight-consequence.visible-onload pode ter seu próprio delay, se desejado */
+.highlight-consequence.visible-onload {
+    animation-duration: 1s; /* Ajuste a duração conforme o .highlight-consequence */
+    animation-delay: 0.4s; /* Ajuste o delay se necessário */
+}
+
+/* Keyframe para a animação de "desenho" no carregamento */
+@keyframes draw-underline-onload {
+    from {
+        background-size: 0% 8px;
+    }
+    to {
+        background-size: 100% 8px;
+    }
+}
 
 /* ================================================================ */
 /* 3. INTRO SECTION (TIMELINE)                                      */
@@ -286,22 +353,29 @@ body {
 }
 .timeline-content strong { color: var(--color-text-dark); }
 
+.timeline-node img {
+    width: 20px; /* Ou o tamanho que você tinha para o SVG */
+    height: 20px;
+    object-fit: contain; /* Garante que a imagem caiba sem distorcer */
+}
+
 /* ================================================================ */
-/* 4. PROBLEMS SECTION (CAROUSEL)                                   */
+/* 4. PROBLEMS SECTION (CAROUSEL OTIMIZADO)                         */
 /* ================================================================ */
 .problems-section {
     background-color: var(--color-dark-bg);
     color: var(--color-text-light);
     padding: var(--spacing-section-vertical) 0;
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* Garante que a máscara de gradiente funcione bem */
 }
 
 .problems-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto; 
     align-items: center;
-    margin-bottom: 60px;
+    gap: 20px; 
+    margin-bottom: 40px;
     padding: 0 60px;
 }
 
@@ -310,13 +384,23 @@ body {
     font-weight: 800;
     line-height: 1.3;
     color: var(--color-text-light);
+    grid-column: 1 / 2;
 }
 
-.section-headline .highlight-red { color: var(--color-primary-red); }
+.section-headline .highlight-red { 
+    color: var(--color-primary-red); 
+}
 
-.track-controls { display: flex; gap: 15px; }
+.track-controls { 
+    display: flex; 
+    gap: 15px; 
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+}
+
 .track-btn {
-    width: 50px; height: 50px;
+    width: 50px; 
+    height: 50px;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -325,7 +409,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
     backdrop-filter: blur(5px);
 }
 .track-btn:hover:not(:disabled) {
@@ -339,22 +423,57 @@ body {
     transform: scale(1);
     backdrop-filter: none;
 }
-.track-btn svg { width: 24px; height: 24px; }
+.track-btn svg { 
+    width: 24px; 
+    height: 24px; 
+}
 
+/* BARRA DE PROGRESSO */
+.progress-bar-container {
+    width: 100%;
+    height: 3px;
+    background-color: var(--color-dark-border-light);
+    border-radius: 3px;
+    margin-top: 20px;
+    grid-column: 1 / -1; 
+    grid-row: 2 / 3;
+}
+
+.progress-bar-thumb {
+    height: 100%;
+    background-color: var(--color-primary-red);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+
+/* CARROSSEL */
 .horizontal-track-wrapper {
     overflow-x: auto;
-    scroll-behavior: smooth;
+    scroll-behavior: smooth; /* Para os botões */
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     position: relative;
+    cursor: grab;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
     mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+    z-index: 1;
 }
-.horizontal-track-wrapper::-webkit-scrollbar { display: none; }
+
+.horizontal-track-wrapper.is-active {
+    cursor: grabbing;
+    scroll-snap-type: none; /* Essencial para o arraste funcionar bem */
+}
+
+.horizontal-track-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
 .horizontal-track {
     display: flex;
     gap: 40px;
-    padding: 20px 60px;
+    padding: 20px 25vw 20px 60px;
     width: max-content;
 }
 
@@ -370,40 +489,56 @@ body {
     align-items: center;
     text-align: center;
     gap: 25px;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
     transition: transform 0.4s ease, box-shadow 0.4s ease;
+
+    /* Desabilita seleção de texto no card inteiro - ISSO É O MAIS IMPORTANTE */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
+
 .problem-card-horizontal:hover {
     transform: translateY(-8px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
     border-color: var(--color-dark-border-hover);
 }
+
 .problem-card-horizontal .problem-image {
-    width: 120px; height: 120px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
     filter: grayscale(50%);
     transition: filter 0.4s ease;
+    /* As propriedades user-drag foram removidas daqui */
 }
-.problem-card-horizontal:hover .problem-image { filter: grayscale(0%); }
+
+.problem-card-horizontal:hover .problem-image {
+    filter: grayscale(0%);
+}
+
 .problem-card-horizontal .problem-text {
     font-size: 1.1rem;
     line-height: 1.6;
     color: var(--color-text-light-secondary);
 }
 
+/* O restante do seu CSS para .simple-hint-container e a media query permanecem os mesmos */
+/* DICA DE ARRASTAR */
 .simple-hint-container {
     position: absolute;
     bottom: 20px;
     right: 40px;
-    z-index: 50;
+    z-index: 2;
     display: flex;
     align-items: center;
     gap: 10px;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.5);
     padding: 8px 16px;
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(5px);
     pointer-events: none;
     opacity: 0;
@@ -415,7 +550,9 @@ body {
     transform: translateY(0);
     animation: nudge-right 2.5s ease-in-out infinite;
 }
-.simple-hint-container.is-hidden { opacity: 0; }
+.simple-hint-container.is-hidden {
+    opacity: 0;
+}
 .simple-hint-text {
     color: var(--color-text-light-secondary);
     font-size: 0.9rem;
@@ -430,6 +567,35 @@ body {
 @keyframes nudge-right {
     0%, 100% { transform: translateX(0); }
     50% { transform: translateX(10px); }
+}
+
+/* Media Query */
+@media (max-width: 768px) {
+    .problems-header {
+        padding: 0 20px;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    .section-headline {
+        text-align: center;
+    }
+    .track-controls {
+        justify-content: center;
+        grid-column: 1 / -1;
+        grid-row: 2 / 3;
+    }
+    .progress-bar-container {
+        grid-row: 3 / 4;
+    }
+    .horizontal-track {
+        padding: 20px 15vw 20px 20px;
+    }
+    .problem-card-horizontal {
+        width: 70vw;
+    }
+    .simple-hint-container {
+        right: 20px;
+    }
 }
 
 /* ================================================================ */
@@ -823,6 +989,244 @@ body {
 }
 
 /* ================================================================ */
+/* 11. SEÇÃO FINAL CTA (VERSÃO HÍBRIDA PREMIUM)                      */
+/* ================================================================ */
+
+/* Parte 1: Estilo da Seção (O Foco Iluminado) */
+.final-cta-section.premium-results {
+    background-color: var(--color-light-bg);
+    /* Efeito de "Spotlight" com gradiente radial sutil */
+    background-image: radial-gradient(ellipse at 50% 65%, hsl(0, 0%, 100%) 0%, hsl(210, 17%, 96%) 100%);
+    padding: var(--spacing-section-vertical) var(--spacing-section-horizontal);
+    text-align: center;
+    overflow: hidden; /* Para conter o brilho do botão se ele se mover muito */
+}
+
+.final-cta-container {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* Parte 2: Estilo do Card (O Convite Premium) */
+.cta-card {
+    background-color: #ffffff;
+    border: 1px solid hsl(210, 17%, 94%);
+    border-radius: 20px;
+    padding: 60px 40px;
+    box-shadow: 0 25px 50px -12px hsla(220, 40%, 30%, 0.1),
+                0 0 15px hsla(220, 40%, 30%, 0.05);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    /* Adicionado para melhor responsividade em telas pequenas */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-card.is-visible {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.cta-seal {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 30px auto;
+    border-radius: 50%;
+    background-color: transparent;
+    border: none;
+    overflow: hidden;
+}
+
+.cta-seal img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(100%);
+    opacity: 0.7;
+    transition: all 0.4s ease;
+}
+
+.cta-card:hover .cta-seal img {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* Parte 4: Refinando a Hierarquia e Tipografia dentro do Card */
+.final-cta-intro {
+    font-size: 1rem;
+    color: var(--color-text-dark-tertiary);
+    line-height: 1.7;
+    margin-bottom: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.final-cta-headline {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    color: var(--color-text-dark);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.final-cta-subheadline {
+    font-size: 1.15rem;
+    color: var(--color-text-dark-secondary);
+    line-height: 1.7;
+    margin-bottom: 40px;
+    max-width: 95%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* --- ATUALIZAÇÕES NO BOTÃO CTA --- */
+
+@keyframes pulse-shadow {
+    0%, 100% {
+        box-shadow: 0 10px 25px -8px rgba(var(--color-primary-green-rgb, 29, 185, 84), 0.35);
+    }
+    50% {
+        box-shadow: 0 12px 30px -5px rgba(var(--color-primary-green-rgb, 29, 185, 84), 0.45);
+    }
+}
+
+.cta-button-final-premium {
+    /* Seus estilos base do HTML (que você já tem no .cta-button geral) são herdados aqui.
+       Ex: background-color, color, font-size, font-weight, text-decoration, padding,
+           border-radius, text-transform, display, align-items, justify-content.
+       Vamos adicionar/sobrescrever o que for necessário para o "premium" */
+
+    padding: 18px 45px; /* Ligeiramente maior que um botão padrão */
+    font-size: 1.1rem;   /* Um pouco maior */
+    letter-spacing: 0.5px;
+
+    /* Sobrescrevendo a sombra base com a animação de pulso */
+    animation: pulse-shadow 2.5s ease-in-out infinite;
+
+    border: 2px solid transparent; /* Prepara para uma borda no hover */
+
+    /* Mantém as transições suaves para outros efeitos */
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                background-color 0.3s ease,
+                box-shadow 0.3s ease-out,
+                border-color 0.3s ease;
+
+    position: relative; /* Para o efeito de brilho */
+    overflow: hidden;   /* Para conter o brilho */
+    z-index: 1;         /* Para garantir que o brilho fique por cima de outros elementos no botão */
+}
+
+/* Efeito de brilho sutil no hover */
+.cta-button-final-premium::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 350%; /* Ajustado para ser bem grande */
+    height: 350%;
+    background: radial-gradient(circle at center,
+                                    rgba(255, 255, 255, 0.2) 0%,   /* Mais intenso no centro */
+                                    rgba(255, 255, 255, 0.1) 25%,  /* Suaviza */
+                                    transparent 50%);              /* Desaparece */
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1; /* Coloca atrás do texto do botão */
+}
+
+.cta-button-final-premium:hover {
+    background-color: var(--color-primary-green-hover); /* Cor de hover que você já tem */
+    transform: scale(1.05) translateY(-3px); /* Efeito de elevação e zoom um pouco mais pronunciado */
+
+    /* A animação de pulso continua, mas podemos dar uma sombra mais forte no hover */
+    box-shadow: 0 15px 35px -10px rgba(var(--color-primary-green-rgb, 29, 185, 84), 0.5);
+
+    border-color: rgba(255, 255, 255, 0.25); /* Borda branca sutil no hover */
+}
+
+.cta-button-final-premium:hover::before {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+/* Ajuste para o ícone dentro deste botão específico, se houver.
+   Se você não usa um ícone dentro do .cta-button-final-premium, pode remover isto. */
+.cta-button-final-premium .cta-button-icon {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.cta-button-final-premium:hover .cta-button-icon {
+    transform: translateX(4px) scale(1.05);
+}
+
+
+/* Assurance Text: A frase final de confiança. Mais peso. */
+.cta-assurance-text {
+    margin-top: 25px;
+    font-size: 1rem;
+    color: var(--color-primary-green);
+    font-weight: 700;
+    opacity: 1;
+}
+
+/* Media queries para telas menores */
+@media (max-width: 768px) {
+    .final-cta-section.premium-results {
+        padding: var(--spacing-section-vertical-small) var(--spacing-section-horizontal-small);
+    }
+    .cta-card {
+        padding: 30px 20px; /* Reduz o padding do card */
+        margin-left: 15px; /* Adiciona margem lateral */
+        margin-right: 15px;
+    }
+    .final-cta-headline {
+        font-size: 2rem; /* Reduz o tamanho da headline */
+        margin-bottom: 10px;
+    }
+    .final-cta-subheadline {
+        font-size: 1rem; /* Reduz o tamanho da subheadline */
+        margin-bottom: 30px;
+    }
+    .cta-button-final-premium {
+        padding: 14px 30px; /* Reduz o padding do botão */
+        font-size: 0.95rem; /* Reduz o tamanho da fonte do botão */
+    }
+    .cta-seal {
+        width: 50px; /* Reduz o tamanho do selo */
+        height: 50px;
+        margin-bottom: 20px;
+    }
+    .final-cta-intro {
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+    .cta-assurance-text {
+        font-size: 0.9rem;
+        margin-top: 15px;
+    }
+}
+
+/* Otimização extra para telas ainda menores (ex: alguns celulares mais estreitos) */
+@media (max-width: 480px) {
+    .cta-card {
+        padding: 25px 15px;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+    .final-cta-headline {
+        font-size: 1.8rem;
+    }
+    .cta-button-final-premium {
+        padding: 12px 25px;
+    }
+}
+
+/* ================================================================ */
 /* 12. ESTILOS ADICIONAIS (Créditos e Canvas 3D)                    */
 /* ================================================================ */
 
@@ -851,4 +1255,296 @@ body {
     margin: 30px auto 0 auto; /* Centraliza e adiciona margem acima */
     position: relative; /* Necessário para alguns efeitos ou overlays, se quisermos */
     /* background-color: rgba(255, 255, 255, 0.05); */ /* Cor de fundo de debug, remova depois */
+}
+
+/* ================================================================ */
+/* 13. SEÇÃO FAQ (DESIGN INTERATIVO - VERSÃO FINAL)                 */
+/* ================================================================ */
+
+.faq-section {
+    background-color: var(--color-dark-bg); 
+    padding: var(--spacing-section-vertical) var(--spacing-section-horizontal);
+}
+
+.faq-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.accordion {
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.accordion-item {
+    background-color: var(--color-dark-card);
+    border: 1px solid var(--color-dark-border);
+    border-radius: 12px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.accordion-item:not(.is-open):hover {
+    background-color: #242424;
+    border-color: var(--color-dark-border-hover);
+}
+
+.accordion-question {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    padding: 25px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-family: var(--font-family-main);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-light-secondary);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.faq-icon-wrapper {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    color: var(--color-primary-green);
+    opacity: 0.7;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.accordion-question:hover .faq-icon-wrapper {
+    opacity: 1;
+    transform: scale(1.05); /* Pequeno bônus: o ícone cresce um pouco no hover */
+}
+
+/* Ícone de Toggle (+ / -) */
+.accordion-icon-toggle {
+    margin-left: auto;
+    position: relative;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+.accordion-icon-toggle::before,
+.accordion-icon-toggle::after {
+    content: '';
+    position: absolute;
+    background-color: var(--color-text-light-tertiary);
+    border-radius: 2px;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.accordion-icon-toggle::before { /* Barra horizontal */
+    width: 100%; height: 2px; top: 7px;
+}
+.accordion-icon-toggle::after { /* Barra vertical */
+    width: 2px; height: 100%; left: 7px;
+}
+
+/* --- ESTILOS CORRIGIDOS PARA O ITEM ABERTO --- */
+
+/* Refinamento Adicional: Borda verde para dar mais destaque ao item aberto */
+.accordion-item.is-open {
+    border-color: var(--color-primary-green);
+}
+
+.accordion-item.is-open .accordion-question {
+    color: var(--color-text-light);
+}
+
+.accordion-item.is-open .faq-icon-wrapper {
+    opacity: 1;
+}
+
+/* CORREÇÃO DA ANIMAÇÃO:
+   A barra horizontal não se move, a vertical gira 90 graus para se alinhar a ela. */
+.accordion-item.is-open .accordion-icon-toggle::before {
+    transform: rotate(0deg); /* Garante que a barra horizontal fique parada */
+}
+.accordion-item.is-open .accordion-icon-toggle::after {
+    transform: rotate(90deg); /* Gira a barra vertical para criar o sinal de '-' */
+}
+
+/* Estilos para a resposta (seu código já estava perfeito aqui) */
+.accordion-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.accordion-answer p {
+    padding: 0 25px 25px 73px;
+    color: var(--color-text-light-tertiary);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+/* ================================================================ */
+/* 14. SEÇÃO DE URGÊNCIA (VERSÃO OTIMIZADA)                         */
+/* ================================================================ */
+
+.urgency-section-premium {
+    background-image: linear-gradient(175deg, hsl(0, 75%, 48%) 0%, hsl(0, 85%, 42%) 100%);
+    color: #FFFFFF;
+    padding: 70px var(--spacing-section-horizontal);
+    text-align: center;
+    position: relative;
+}
+
+.urgency-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* --- ESTA É A PARTE OTIMIZADA --- */
+
+.urgency-image-wrapper {
+    width: 80px; /* Define o tamanho do ícone */
+    height: 80px;
+    margin-bottom: 30px;
+    border-radius: 50%; /* Garante o formato circular */
+    /* Opcional: Adiciona uma borda sutil para destacar */
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    /* Adicionado para garantir que a imagem interna respeite a borda arredondada, se necessário */
+    overflow: hidden; 
+}
+
+.urgency-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Faz a imagem preencher o círculo sem distorcer */
+    border-radius: 50%; /* Essencial para a imagem ficar redonda */
+    display: block; /* Remove espaços extras indesejados */
+    
+    /* ADICIONE ESTA LINHA PARA DEIXAR A IMAGEM EM PRETO E BRANCO */
+    filter: grayscale(100%); 
+}
+
+/* O resto do CSS para a tipografia continua o mesmo */
+.urgency-headline {
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    font-weight: 700;
+    line-height: 1.5;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+    margin-bottom: 15px;
+    max-width: 650px;
+}
+
+.urgency-text {
+    font-size: clamp(1rem, 2.2vw, 1.15rem);
+    font-weight: 400;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.85);
+    max-width: 750px;
+}
+
+.urgency-text strong {
+    font-weight: 800;
+    color: #FFFFFF;
+}
+
+/* ================================================================ */
+/* 15. ESTILOS DE TÍTULOS PARA SEÇÕES ESCURAS                       */
+/* ================================================================ */
+
+/* Usaremos esta classe para títulos principais em fundos escuros */
+.section-headline-dark {
+    font-size: clamp(2.2rem, 5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    color: var(--color-text-light); /* A cor correta: BRANCO */
+}
+
+/* Usaremos esta para subtítulos em fundos escuros */
+.section-subheadline-dark {
+    font-size: 1.1rem;
+    color: var(--color-text-light-secondary); /* A cor correta: CINZA CLARO */
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ================================================================ */
+/* 16. PRÉ-RODAPÉ (BANNER DE ASSINATURA)                            */
+/* ================================================================ */
+
+.pre-footer-banner {
+    background-color: var(--color-dark-bg);
+    padding: 80px var(--spacing-section-horizontal);
+    /* Borda superior sutil para separar da seção anterior (FAQ) */
+    border-top: 1px solid var(--color-dark-border);
+}
+
+.pre-footer-container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px; /* Espaço entre a imagem simbólica e a logo */
+}
+
+.pre-footer-symbol {
+    width: 120px; /* Tamanho da imagem circular */
+    height: 120px;
+}
+
+.pre-footer-symbol img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%; /* Garante que a imagem seja perfeitamente redonda */
+    
+    /* Efeito de brilho sutil para dar destaque */
+    box-shadow: 0 0 30px rgba(var(--color-primary-green-rgb, 29, 185, 84), 0.15),
+                0 0 15px rgba(255, 255, 255, 0.05);
+    
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.pre-footer-symbol img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 45px rgba(var(--color-primary-green-rgb, 29, 185, 84), 0.25),
+                0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.pre-footer-logo {
+    max-width: 250px; /* Tamanho da sua logo */
+}
+
+.pre-footer-logo img {
+    width: 100%;
+    height: auto;
+    display: block;
+    opacity: 0.8; /* Deixa a logo um pouco mais sutil */
+    transition: opacity 0.3s ease;
+}
+
+.pre-footer-logo img:hover {
+    opacity: 1;
+}
+
+/* Ajustes para telas menores */
+@media (max-width: 768px) {
+    .pre-footer-banner {
+        padding: 60px 20px;
+    }
+    .pre-footer-symbol {
+        width: 100px;
+        height: 100px;
+    }
+    .pre-footer-logo {
+        max-width: 200px;
+    }
+    .pre-footer-container {
+        gap: 30px;
+    }
 }
