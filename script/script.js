@@ -1,19 +1,18 @@
 // Importações de Módulos ES6 no topo do arquivo.
-// O importmap no seu HTML dirá ao navegador onde encontrar esses módulos.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'; // Importe se seu modelo usar compressão Draco
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 /**
  * Script principal para a Landing Page de Serviços
  * Autor: [@mizael_m.m]
- * Versão: 1.3 (com imports ES6 explícitos e importmap) - ESTA VERSÃO FUNCIONAVA NO PC
+ * Versão: 1.5 (Modelo 3D apenas para desktop)
  * Funcionalidades:
  * 1. Animações de entrada de elementos ao rolar a página.
  * 2. Efeito de parallax nas imagens da seção de herói.
  * 3. Controle de carrossel horizontal para a seção de problemas.
  * 4. Dica visual de "arraste para o lado" que desaparece após a interação.
- * 5. Renderização de modelo 3D (cérebro) na seção de serviços.
+ * 5. Renderização de modelo 3D (cérebro) na seção de serviços (APENAS DESKTOP).
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -130,10 +129,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Função 5: Inicializa e renderiza o modelo 3D do cérebro.
+     * Função 5: Inicializa e renderiza o modelo 3D do cérebro (APENAS PARA DESKTOP).
      */
     const initBrainModel = () => {
-        console.log('Tentando iniciar initBrainModel...');
+        // Verifica se a tela é suficientemente larga (ex: desktop)
+        // Usamos a mesma largura da media query do CSS (769px)
+        if (!window.matchMedia("(min-width: 769px)").matches) {
+            console.log('Tela pequena detectada, modelo 3D do cérebro não será carregado.');
+            const container = document.getElementById('brain-canvas-container');
+            if (container) {
+                // Opcional: você pode esconder o container ou adicionar uma imagem de fallback
+                container.style.display = 'none'; 
+            }
+            return; // Não executa o restante da função em telas pequenas
+        }
+        
+        console.log('Tentando iniciar initBrainModel para desktop...');
         const container = document.getElementById('brain-canvas-container');
         if (!container) {
             console.error('#brain-canvas-container não encontrado no DOM.');
@@ -141,16 +152,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         console.log('Contêiner do canvas encontrado:', container);
 
-        if (!THREE || !GLTFLoader) { // GLTFLoader e DRACOLoader são importados no topo
-            console.error('ERRO CRÍTICO: Three.js, GLTFLoader ou DRACOLoader não foram importados corretamente no topo do script.');
+        if (!THREE || !GLTFLoader) {
+            console.error('ERRO CRÍTICO: Three.js ou GLTFLoader não foram importados corretamente.');
             container.innerHTML = '<p style="color:red; font-size:12px;">Erro: Bibliotecas 3D não carregadas.</p>';
             return;
         }
-        console.log('THREE, GLTFLoader e DRACOLoader estão disponíveis.');
+        console.log('THREE e GLTFLoader estão disponíveis.');
 
         const scene = new THREE.Scene();
-        console.log('Cena criada.');
-
         const camera = new THREE.PerspectiveCamera(
             50,
             container.clientWidth / container.clientHeight,
@@ -158,19 +167,17 @@ document.addEventListener('DOMContentLoaded', () => {
             1000
         );
         camera.position.set(0, 0, 3); 
-        console.log('Câmera criada e posicionada.');
 
         const renderer = new THREE.WebGLRenderer({ 
             antialias: true, 
             alpha: true,
-            // powerPreference: "low-power" // Podemos testar com e sem depois para mobile
+            powerPreference: "high-performance" // Desktop pode usar high-performance
         });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
 
         container.innerHTML = '';
         container.appendChild(renderer.domElement);
-        console.log('Renderizador criado e adicionado ao contêiner.');
 
         // Iluminação
         const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
@@ -178,9 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8); 
         directionalLight.position.set(5, 7, 5); 
         scene.add(directionalLight);
-        // const pointLight = new THREE.PointLight(0xffffff, 0.7, 100);
-        // pointLight.position.set(-4, -3, 4);
-        // scene.add(pointLight);
+        
         console.log('Luzes adicionadas à cena.');
 
         const loader = new GLTFLoader();
@@ -189,9 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const dracoLoader = new DRACOLoader();
             dracoLoader.setDecoderPath('three/addons/libs/draco/gltf/');
             loader.setDRACOLoader(dracoLoader);
-            console.log('DRACOLoader configurado e associado ao GLTFLoader.');
+            console.log('DRACOLoader configurado.');
         } else {
-            console.warn('DRACOLoader não foi importado/disponível. Modelos comprimidos com Draco podem não carregar.');
+            console.warn('DRACOLoader não foi importado. Modelos comprimidos com Draco podem não carregar.');
         }
 
         let brainModel;
@@ -244,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             (error) => {
                 console.error(`Erro DETALHADO ao carregar o modelo 3D de "${modelPath}":`, error);
-                if (container) container.innerHTML = `<p style="color:red; font-size:12px;">Erro ao carregar modelo 3D. Verifique o console (F12).</p><p style="color:red; font-size:10px;">${error.message || 'Erro desconhecido'}</p>`;
+                if (container) container.innerHTML = `<p style="color:red; font-size:12px;">Erro ao carregar modelo 3D. Verifique o console (F12).</p>`;
             }
         );
 
@@ -276,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initParallaxEffect();
         initProblemsCarousel();
         initDragHint();
-        initBrainModel();
+        initBrainModel(); // A função initBrainModel agora tem a lógica de não rodar em mobile
     };
 
     // Inicia tudo!
