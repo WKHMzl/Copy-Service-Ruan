@@ -1,7 +1,13 @@
+// Importações de Módulos ES6 no topo do arquivo.
+// O importmap no seu HTML dirá ao navegador onde encontrar esses módulos.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'; // Importe se seu modelo usar compressão Draco
+
 /**
  * Script principal para a Landing Page de Serviços
  * Autor: [@mizael_m.m]
- * Versão: 1.2 (com integração 3D e GLTFLoader via importmap)
+ * Versão: 1.3 (com imports ES6 explícitos e importmap)
  * Funcionalidades:
  * 1. Animações de entrada de elementos ao rolar a página.
  * 2. Efeito de parallax nas imagens da seção de herói.
@@ -10,15 +16,18 @@
  * 5. Renderização de modelo 3D (cérebro) na seção de serviços.
  */
 
-// Executa o script principal quando o conteúdo do HTML estiver completamente carregado.
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Carregado. Iniciando scripts...');
 
     /**
      * Função 1: Animação de entrada para elementos com a classe .animate-on-scroll
      */
     const initScrollAnimation = () => {
         const animatedElements = document.querySelectorAll('.animate-on-scroll');
-        if (animatedElements.length === 0) return;
+        if (animatedElements.length === 0) {
+            // console.log('Nenhum elemento .animate-on-scroll encontrado.');
+            return;
+        }
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -30,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { threshold: 0.15 });
 
         animatedElements.forEach(element => observer.observe(element));
+        // console.log('Animação de scroll iniciada para', animatedElements.length, 'elementos.');
     };
 
     /**
@@ -37,7 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     const initParallaxEffect = () => {
         const parallaxImages = document.querySelectorAll('.floating-img');
-        if (parallaxImages.length === 0) return;
+        if (parallaxImages.length === 0) {
+            // console.log('Nenhuma imagem .floating-img encontrada para parallax.');
+            return;
+        }
 
         const initialTransforms = new Map();
         parallaxImages.forEach(img => {
@@ -58,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('scroll', () => {
             window.requestAnimationFrame(handleScroll);
         }, { passive: true });
+        // console.log('Efeito parallax iniciado para', parallaxImages.length, 'imagens.');
     };
 
     /**
@@ -68,9 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
 
-        if (!trackWrapper || !prevBtn || !nextBtn) return;
+        if (!trackWrapper || !prevBtn || !nextBtn) {
+            // console.log('Elementos do carrossel de problemas não encontrados.');
+            return;
+        }
 
         const updateButtons = () => {
+            if (!trackWrapper.offsetParent) return; // Não atualiza se o elemento não estiver visível/renderizado
             const scrollEnd = trackWrapper.scrollWidth - trackWrapper.clientWidth - 1;
             prevBtn.disabled = trackWrapper.scrollLeft <= 0;
             nextBtn.disabled = trackWrapper.scrollLeft >= scrollEnd;
@@ -87,7 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
         prevBtn.addEventListener('click', () => scrollCarousel(-1));
         nextBtn.addEventListener('click', () => scrollCarousel(1));
         trackWrapper.addEventListener('scroll', updateButtons, { passive: true });
-        updateButtons();
+        
+        // Atrasar a primeira chamada de updateButtons para garantir que o layout esteja estável
+        setTimeout(updateButtons, 100);
+        // console.log('Carrossel de problemas iniciado.');
     };
 
     /**
@@ -98,7 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const simpleHint = document.querySelector('.simple-hint-container');
         const trackWrapper = document.querySelector('.horizontal-track-wrapper');
 
-        if (!problemsSection || !simpleHint || !trackWrapper) return;
+        if (!problemsSection || !simpleHint || !trackWrapper) {
+            // console.log('Elementos da dica de arrastar não encontrados.');
+            return;
+        }
 
         const hintObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -119,130 +143,153 @@ document.addEventListener('DOMContentLoaded', () => {
         trackWrapper.addEventListener('scroll', hideHint, { once: true });
         document.getElementById('prev-btn')?.addEventListener('click', hideHint, { once: true });
         document.getElementById('next-btn')?.addEventListener('click', hideHint, { once: true });
+        // console.log('Dica de arrastar iniciada.');
     };
 
     /**
      * Função 5: Inicializa e renderiza o modelo 3D do cérebro.
      */
-    const initBrainModel = async () => {
+    const initBrainModel = () => {
+        console.log('Tentando iniciar initBrainModel...');
         const container = document.getElementById('brain-canvas-container');
         if (!container) {
-            console.warn('Contêiner do modelo 3D (#brain-canvas-container) não encontrado.');
+            console.error('#brain-canvas-container não encontrado no DOM.');
             return;
         }
+        console.log('Contêiner do canvas encontrado:', container);
 
-        // O THREE já deve estar disponível globalmente devido ao importmap
-        if (typeof THREE === 'undefined') {
-            console.error('THREE (Three.js) não está definido. Verifique seu importmap.');
-            container.innerHTML = '<p style="color:red; font-size:12px;">Erro: Biblioteca Three.js não carregada.</p>';
+        if (!THREE || !GLTFLoader) {
+            console.error('ERRO CRÍTICO: THREE.js ou GLTFLoader não foram importados corretamente no topo do script.');
+            container.innerHTML = '<p style="color:red; font-size:12px;">Erro: Bibliotecas 3D não carregadas.</p>';
             return;
         }
-
-        // Importa GLTFLoader do namespace THREE, que é populado pelo importmap.
-        // Não é necessário um import dinâmico `await import(...)` aqui se o importmap estiver correto.
-        const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
-        if (!GLTFLoader) {
-             console.error('GLTFLoader não pôde ser carregado. Verifique o caminho no importmap: "three/addons/loaders/GLTFLoader.js"');
-             container.innerHTML = '<p style="color:red; font-size:12px;">Erro: GLTFLoader não carregado.</p>';
-             return;
-        }
+        console.log('THREE e GLTFLoader estão disponíveis.');
 
         const scene = new THREE.Scene();
+        console.log('Cena criada.');
+
         const camera = new THREE.PerspectiveCamera(
-            50, // Campo de visão
-            container.clientWidth / container.clientHeight, // Proporção
-            0.1, // Plano de corte próximo
-            1000 // Plano de corte distante
+            50,
+            container.clientWidth / container.clientHeight,
+            0.1,
+            1000
         );
-        // Ajuste a posição Z da câmera para melhor visualização do modelo
-        // Modelos diferentes podem exigir valores diferentes. Comece com um valor maior e diminua se necessário.
-        camera.position.set(0, 0, 3); 
+        camera.position.set(0, 0, 3); // Posição inicial da câmera
+        console.log('Câmera criada e posicionada.');
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        container.innerHTML = ''; // Limpa o contêiner antes de adicionar o novo canvas
+        container.innerHTML = '';
         container.appendChild(renderer.domElement);
+        console.log('Renderizador criado e adicionado ao contêiner.');
 
         // Iluminação
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.8); // Cor branca, intensidade aumentada
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
         scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        directionalLight.position.set(3, 5, 5); // Ajuste a posição para melhor iluminação
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8); // Aumentei um pouco
+        directionalLight.position.set(5, 7, 5); // Ajustei posição
         scene.add(directionalLight);
-        
-        const pointLight = new THREE.PointLight(0xffffff, 1.0, 100);
-        pointLight.position.set(-3, -2, 4);
+        const pointLight = new THREE.PointLight(0xffffff, 0.7, 100);
+        pointLight.position.set(-4, -3, 4);
         scene.add(pointLight);
+        console.log('Luzes adicionadas à cena.');
 
         const loader = new GLTFLoader();
+
+        // Configurar o DracoLoader (se o seu modelo .glb usar compressão Draco)
+        if (DRACOLoader) {
+            const dracoLoader = new DRACOLoader();
+            // O caminho para os decodificadores Draco agora é gerenciado pelo importmap
+            // ou pela estrutura de 'addons' do Three.js via CDN.
+            // Se o modelo for Draco compressed e não carregar, este é o ponto a investigar.
+            // Geralmente, o GLTFLoader tenta usar o DracoLoader se ele estiver em
+            // `examples/jsm/libs/draco/gltf/` na CDN.
+            // Se você baixou os arquivos Draco para uma pasta local, por exemplo '/libs/draco_decoder_gltf/', use:
+            // dracoLoader.setDecoderPath('/libs/draco_decoder_gltf/');
+            // Mas, com o importmap, o Three.js deve tentar encontrar o caminho correto na CDN
+             dracoLoader.setDecoderPath('three/addons/libs/draco/gltf/'); // Tenta usar o caminho do importmap
+            loader.setDRACOLoader(dracoLoader);
+            console.log('DRACOLoader configurado e associado ao GLTFLoader.');
+        } else {
+            console.warn('DRACOLoader não foi importado. Modelos comprimidos com Draco podem não carregar.');
+        }
+
+
         let brainModel;
         const modelPath = 'assets/brain_model.glb'; // CERTIFIQUE-SE DE QUE ESTE CAMINHO ESTÁ CORRETO
+        console.log(`Tentando carregar modelo de: ${modelPath}`);
 
         loader.load(
             modelPath,
             (gltf) => {
+                console.log('Modelo GLTF carregado com sucesso:', gltf);
                 brainModel = gltf.scene;
                 brainModel.visible = true;
 
-                // Centralizar e escalar o modelo
                 const box = new THREE.Box3().setFromObject(brainModel);
                 const center = box.getCenter(new THREE.Vector3());
-                brainModel.position.sub(center); 
+                brainModel.position.sub(center);
 
                 const size = box.getSize(new THREE.Vector3());
                 const maxDim = Math.max(size.x, size.y, size.z);
-                
+
                 if (maxDim === 0 || !isFinite(maxDim)) {
-                    brainModel.scale.set(1, 1, 1); 
+                    console.warn("Dimensões do modelo são zero ou inválidas. Aplicando escala padrão de 1.");
+                    brainModel.scale.set(1, 1, 1);
                 } else {
-                    const desiredSize = 1.8; // Aumentei um pouco o tamanho desejado na cena
+                    const desiredSize = 1.6; // Ajuste para o tamanho visual desejado
                     const scale = desiredSize / maxDim;
                     brainModel.scale.set(scale, scale, scale);
+                    console.log(`Modelo escalado por um fator de: ${scale}`);
                 }
                 
-                // Ajustes de material para modelos que podem ser translúcidos ou muito escuros
+                // Ajustes de material
                 brainModel.traverse((child) => {
                     if (child.isMesh) {
+                        // console.log('Processando mesh:', child.name, child.material);
                         if (child.material) {
-                            // Se o modelo for intencionalmente translúcido
-                            if (child.material.transparent && child.material.opacity < 1.0) {
-                                child.material.depthWrite = false; 
-                            } else { // Para materiais opacos, garanta que depthWrite seja true
-                                child.material.depthWrite = true;
-                            }
+                            // Para o efeito translúcido que você gostou
+                            child.material.transparent = true;
+                            child.material.opacity = 0.85; // Ajuste conforme necessário
+                            child.material.depthWrite = false; // Importante para translucidez correta
+
                             // Ajustes gerais para melhor resposta à luz
-                            if (child.material.metalness !== undefined) child.material.metalness = 0.2;
-                            if (child.material.roughness !== undefined) child.material.roughness = 0.6;
+                            if (child.material.metalness !== undefined) child.material.metalness = 0.1;
+                            if (child.material.roughness !== undefined) child.material.roughness = 0.5;
                             child.material.needsUpdate = true;
                         }
                     }
                 });
 
                 scene.add(brainModel);
+                console.log('Modelo do cérebro adicionado à cena e materiais ajustados.');
             },
-            undefined,
+            (xhr) => { // Função de progresso
+                // console.log(`Modelo: ${(xhr.loaded / xhr.total * 100).toFixed(2)}% carregado`);
+            },
             (error) => {
-                console.error(`Erro ao carregar o modelo 3D de "${modelPath}":`, error);
-                if(container) container.innerHTML = `<p style="color:red; font-size:12px;">Erro ao carregar modelo. Verifique o console (F12).</p>`;
+                console.error(`Erro DETALHADO ao carregar o modelo 3D de "${modelPath}":`, error);
+                if (container) container.innerHTML = `<p style="color:red; font-size:12px;">Erro ao carregar modelo. Verifique o console (F12).</p><p style="color:red; font-size:10px;">${error.message || 'Erro desconhecido'}</p>`;
             }
         );
 
         const animate = () => {
             requestAnimationFrame(animate);
             if (brainModel) {
-                brainModel.rotation.y += 0.004; // Ajuste a velocidade de rotação aqui
+                brainModel.rotation.y += 0.0035; // Ajuste a velocidade de rotação
             }
             renderer.render(scene, camera);
         };
         animate();
+        console.log('Loop de animação iniciado.');
 
         const onWindowResize = () => {
             if (container && container.clientWidth > 0 && container.clientHeight > 0) {
                 camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(container.clientWidth, container.clientHeight);
+                // console.log('Canvas 3D redimensionado.');
             }
         };
         window.addEventListener('resize', onWindowResize);
@@ -261,4 +308,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicia tudo!
     initPage();
+    console.log('initPage() chamado. Todos os scripts de inicialização executados.');
 });
